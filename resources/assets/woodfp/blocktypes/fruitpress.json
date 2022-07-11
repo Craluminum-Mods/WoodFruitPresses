@@ -1,0 +1,49 @@
+{
+  "code": "fruitpress",
+  "class": "WFPBlockFruitPress",
+  "entityClass": "WFPFruitPress",
+  "entityBehaviors": [{ "name": "Animatable" }],
+  "attributes": {
+    "handbook": { "groupBy": ["fruitpress-*"] },
+    "textureCodeForBlockColor": "wood",
+    "variantGroups": {
+      "wood": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
+      "strainer": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
+      "metal": ["copper", "tinbronze", "bismuthbronze", "blackbronze", "iron", "meteoriciron", "steel"]
+    }
+  },
+  "variantGroups": [
+    { "code": "orientation", "states": ["ns", "we"] }
+  ],
+  "behaviors": [{ "name": "NWOrientable" }],
+  "shapeInventory": { "base": "block/inventory" },
+  "shapebytype": {
+    "*-ns": { "base": "block/part-static", "rotateY": 0 },
+    "*-we": { "base": "block/part-static", "rotateY": 90 }
+  },
+  "faceCullMode": "neverCull",
+  "blockmaterial": "Wood",
+  "drawtype": "JSON",
+  "replaceable": 160,
+  "resistance": 4,
+  "lightAbsorption": 0,
+  "sidesolid": { "all": false },
+  "sideopaque": { "all": false },
+  "sounds": {
+    "place": "game:block/planks",
+    "break": "game:block/planks",
+    "hit": "game:block/planks"
+  },
+  "selectionBoxes": [
+    { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.875, "z2": 1, "rotateYByType": { "*-we": 90 } },
+    { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
+  ],
+  "collisionBoxes": [
+    { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.75, "z2": 1, "rotateYByType": { "*-we": 90 } },
+    { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
+  ],
+  "guiTransform": {
+    "origin": { "x": 0.5, "y": 1, "z": 0.5 },
+    "scale": 0.9
+  }
+}
