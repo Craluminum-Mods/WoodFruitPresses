@@ -19,6 +19,9 @@ namespace WoodFruitPresses.Content
     public Size2i AtlasSize => targetAtlas.Size;
     private Dictionary<int, MeshRef> Meshrefs => ObjectCacheUtil.GetOrCreate(api, "wfpfruitpressmeshrefs", () => new Dictionary<int, MeshRef>());
     public TextureAtlasPosition this[string textureCode] => GetOrCreateTexPos(tmpTextures[textureCode]);
+    public string woodTexPrefix;
+    public string strainerTexPrefix;
+    public string metalTexPrefix;
 
     protected TextureAtlasPosition GetOrCreateTexPos(AssetLocation texturePath)
     {
@@ -45,7 +48,12 @@ namespace WoodFruitPresses.Content
       capi = api as ICoreClientAPI;
 
       AddAllTypesToCreativeInventory();
+      woodTexPrefix = GetTextureLocationPrefix("wood");
+      strainerTexPrefix = GetTextureLocationPrefix("strainer");
+      metalTexPrefix = GetTextureLocationPrefix("metal");
     }
+
+    public string GetTextureLocationPrefix(string key) => Attributes["texturePrefixes"][key].AsString();
 
     public void AddAllTypesToCreativeInventory()
     {
@@ -109,9 +117,9 @@ namespace WoodFruitPresses.Content
 
       if (wood == null && strainer == null && metal == null) return new MeshData();
 
-      tmpTextures["wood"] = new AssetLocation("block/wood/debarked/" + wood + ".png");
-      tmpTextures["strainer"] = new AssetLocation("block/wood/debarked/" + strainer + ".png");
-      tmpTextures["metal"] = new AssetLocation("block/metal/ingot/" + metal + ".png");
+      tmpTextures["wood"] = new AssetLocation(woodTexPrefix + wood + ".png");
+      tmpTextures["strainer"] = new AssetLocation(strainerTexPrefix + strainer + ".png");
+      tmpTextures["metal"] = new AssetLocation(metalTexPrefix + metal + ".png");
 
       var shape = capi.Assets.Get(new AssetLocation("woodfp:shapes/block/inventory.json")).ToObject<Shape>();
 
@@ -160,6 +168,11 @@ namespace WoodFruitPresses.Content
     public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
     {
       return new ItemStack[] { OnPickBlock(world, pos) };
+    }
+
+    public override BlockDropItemStack[] GetDropsForHandbook(ItemStack handbookStack, IPlayer forPlayer)
+    {
+      return new BlockDropItemStack[] { new BlockDropItemStack(handbookStack) };
     }
   }
 }

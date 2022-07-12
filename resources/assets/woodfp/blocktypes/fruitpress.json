@@ -10,6 +10,11 @@
       "wood": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
       "strainer": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
       "metal": ["copper", "tinbronze", "bismuthbronze", "blackbronze", "iron", "meteoriciron", "steel"]
+    },
+    "texturePrefixes": {
+      "wood": "game:block/wood/debarked/",
+      "strainer": "game:block/wood/debarked/",
+      "metal": "game:block/metal/ingot/"
     }
   },
   "variantGroups": [
