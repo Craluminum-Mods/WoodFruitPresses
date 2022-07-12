@@ -11,16 +11,7 @@ namespace WoodFruitPresses.Content
     public string woodType;
     public string strainerType;
     public string metalType;
-    // private WFPBlockFruitPress ownBlock;
-    // private ICoreClientAPI capi;
 
-    // public override void Initialize(ICoreAPI api)
-    // {
-    //   base.Initialize(api);
-
-    //   ownBlock = Block as WFPBlockFruitPress;
-    //   capi = api as ICoreClientAPI;
-    // }
     public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
     {
       woodType = tree.GetString("wood");
