@@ -161,5 +161,10 @@ namespace WoodFruitPresses.Content
     {
       return new ItemStack[] { OnPickBlock(world, pos) };
     }
+
+    public override BlockDropItemStack[] GetDropsForHandbook(ItemStack handbookStack, IPlayer forPlayer)
+    {
+      return new BlockDropItemStack[] { new BlockDropItemStack(handbookStack) };
+    }
   }
 }
