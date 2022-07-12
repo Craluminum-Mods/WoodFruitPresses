@@ -125,9 +125,13 @@ namespace WoodFruitPresses.Content
     {
       base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
 
-      dsc.Append("Wood: ").AppendLine(inSlot.Itemstack.Attributes.GetString("wood"))
-        .Append("Strainer: ").AppendLine(inSlot.Itemstack.Attributes.GetString("strainer"))
-        .Append("Metal: ").AppendLine(inSlot.Itemstack.Attributes.GetString("metal"));
+      var woodDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("wood"));
+      var strainerDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("strainer"));
+      var metalDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("metal"));
+
+      dsc.Append('\n').Append(Lang.Get("Wood")).Append(": ").AppendLine(woodDsc)
+        .Append("Strainer: ").AppendLine(strainerDsc)
+        .Append(Lang.Get("Metal")).Append(": ").AppendLine(metalDsc);
     }
 
     public MeshData GenMesh(ItemStack itemstack, ITextureAtlasAPI targetAtlas, BlockPos atBlockPos) => GenMesh(itemstack, targetAtlas);

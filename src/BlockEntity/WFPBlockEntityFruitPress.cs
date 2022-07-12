@@ -1,6 +1,7 @@
 using System.Text;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.GameContent;
 
@@ -59,9 +60,13 @@ namespace WoodFruitPresses.Content
     {
       base.GetBlockInfo(forPlayer, dsc);
 
-      dsc.Append("\nWood: ").AppendLine(woodType)
-        .Append("Strainer: ").AppendLine(strainerType)
-        .Append("Metal: ").AppendLine(metalType);
+      var woodDsc = Lang.Get("material-" + woodType);
+      var strainerDsc = Lang.Get("material-" + strainerType);
+      var metalDsc = Lang.Get("material-" + metalType);
+
+      dsc.Append('\n').Append(Lang.Get("Wood")).Append(": ").AppendLine(woodDsc)
+        .Append("Strainer: ").AppendLine(strainerDsc)
+        .Append(Lang.Get("Metal")).Append(": ").AppendLine(metalDsc);
     }
   }
 }
