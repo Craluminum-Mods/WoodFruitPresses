@@ -13,7 +13,6 @@ namespace WoodFruitPresses.Load
       base.Start(api);
       api.RegisterBlockClass("WFPBlockFruitPress", typeof(WFPBlockFruitPress));
       api.RegisterBlockEntityClass("WFPFruitPress", typeof(WFPBlockEntityFruitPress));
-      api.RegisterItemClass("WFPItemFruitPress", typeof(WFPItemFruitPress));
       api.World.Logger.Event("started 'Wood Fruit Presses' mod");
     }
   }
