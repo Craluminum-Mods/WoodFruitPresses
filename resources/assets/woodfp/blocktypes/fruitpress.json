@@ -1,54 +1,63 @@
 {
-  "code": "fruitpress",
-  "class": "WFPBlockFruitPress",
-  "entityClass": "WFPFruitPress",
-  "entityBehaviors": [{ "name": "Animatable" }],
-  "attributes": {
-    "handbook": { "groupBy": ["fruitpress-*"] },
-    "textureCodeForBlockColor": "wood",
-    "variantGroups": {
-      "wood": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
-      "strainer": ["aged", "birch", "oak", "maple", "pine", "acacia", "kapok", "baldcypress", "larch", "redwood", "ebony", "walnut", "purpleheart"],
-      "metal": ["copper", "tinbronze", "bismuthbronze", "blackbronze", "iron", "meteoriciron", "steel"]
+    "code": "fruitpress",
+    "class": "WoodFruitPresses.BlockFruitPress",
+    "entityClass": "WoodFruitPresses.FruitPress",
+    "entityBehaviors": [{ "name": "Animatable" }],
+    "attributes": {
+        "handbook": { "groupBy": ["fruitpress-*"] },
+        "textureCodeForBlockColor": "wood",
+        "materials": {
+            "wood": { "loadFromProperties": "block/wood", "states": ["aged"] },
+            "strainer": { "loadFromProperties": "block/wood", "states": ["aged"] },
+            "metal": { "states": ["copper", "tinbronze", "bismuthbronze", "blackbronze", "iron", "meteoriciron", "steel"] }
+        },
+        // "shape": {
+        //     "base": "woodfp:block/fruitpress/part-static",
+        //     "rotateYByType": { "*-ns": 0, "*-we": 90 }
+        // },
+        // "invshape": { "base": "woodfp:block/fruitpress/inventory" },
+        "textures": {
+            "wood": { "base": "game:block/wood/debarked/{wood}" },
+            "strainer": { "base": "game:block/wood/debarked/{strainer}" },
+            "metal": { "base": "game:block/metal/ingot/{metal}" }
+        },
+        "addToCreativeInventoryByType": { "*-ns": true },
+        "isWFPFruitPress": true
     },
-    "texturePrefixes": {
-      "wood": "game:block/wood/debarked/",
-      "strainer": "game:block/wood/debarked/",
-      "metal": "game:block/metal/ingot/"
+    "variantGroups": [{ "code": "orientation", "states": ["ns", "we"] }],
+    "behaviors": [{ "name": "NWOrientable" }],
+    "shapeInventory": { "base": "block/fruitpress/inventory" },
+    "shape": {
+        "base": "woodfp:block/fruitpress/part-static",
+        "rotateY": 90
+        // "rotateYByType": { "*-ns": 0, "*-we": 90 }
+    },
+    "textures": {
+        "wood": { "base": "block/wood/oak" }
+    },
+    "faceCullMode": "neverCull",
+    "blockmaterial": "Wood",
+    "drawtype": "JSON",
+    "replaceable": 160,
+    "resistance": 4,
+    "lightAbsorption": 0,
+    "sidesolid": { "all": false },
+    "sideopaque": { "all": false },
+    "sounds": {
+        "place": "game:block/planks",
+        "break": "game:block/planks",
+        "hit": "game:block/planks"
+    },
+    "selectionBoxes": [
+        { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.875, "z2": 1, "rotateYByType": { "*-we": 90 } },
+        { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
+    ],
+    "collisionBoxes": [
+        { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.75, "z2": 1, "rotateYByType": { "*-we": 90 } },
+        { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
+    ],
+    "guiTransform": {
+        "origin": { "x": 0.5, "y": 1, "z": 0.5 },
+        "scale": 0.9
     }
-  },
-  "variantGroups": [
-    { "code": "orientation", "states": ["ns", "we"] }
-  ],
-  "behaviors": [{ "name": "NWOrientable" }],
-  "shapeInventory": { "base": "block/inventory" },
-  "shapebytype": {
-    "*-ns": { "base": "block/part-static", "rotateY": 0 },
-    "*-we": { "base": "block/part-static", "rotateY": 90 }
-  },
-  "faceCullMode": "neverCull",
-  "blockmaterial": "Wood",
-  "drawtype": "JSON",
-  "replaceable": 160,
-  "resistance": 4,
-  "lightAbsorption": 0,
-  "sidesolid": { "all": false },
-  "sideopaque": { "all": false },
-  "sounds": {
-    "place": "game:block/planks",
-    "break": "game:block/planks",
-    "hit": "game:block/planks"
-  },
-  "selectionBoxes": [
-    { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.875, "z2": 1, "rotateYByType": { "*-we": 90 } },
-    { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
-  ],
-  "collisionBoxes": [
-    { "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 0.75, "z2": 1, "rotateYByType": { "*-we": 90 } },
-    { "x1": 0.2326, "y1": 0.75, "z1": 0.2326, "x2": 0.7626, "y2": 1.313, "z2": 0.7626, "rotateYByType": { "*-we": 90 } }
-  ],
-  "guiTransform": {
-    "origin": { "x": 0.5, "y": 1, "z": 0.5 },
-    "scale": 0.9
-  }
 }

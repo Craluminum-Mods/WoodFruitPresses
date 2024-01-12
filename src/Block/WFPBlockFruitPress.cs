@@ -1,178 +1,158 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using Newtonsoft.Json.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.Config;
-using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
-namespace WoodFruitPresses.Content
+namespace WoodFruitPresses;
+
+public class WFPBlockFruitPress : BlockFruitPress
 {
-  public class WFPBlockFruitPress : BlockFruitPress, ITexPositionSource, IContainedMeshSource
-  {
-    private ICoreClientAPI capi;
-    private ITextureAtlasAPI targetAtlas;
-    private readonly Dictionary<string, AssetLocation> tmpTextures = new();
-    public Size2i AtlasSize => targetAtlas.Size;
-    private Dictionary<int, MeshRef> Meshrefs => ObjectCacheUtil.GetOrCreate(api, "wfpfruitpressmeshrefs", () => new Dictionary<int, MeshRef>());
-    public TextureAtlasPosition this[string textureCode] => GetOrCreateTexPos(tmpTextures[textureCode]);
-    public string woodTexPrefix;
-    public string strainerTexPrefix;
-    public string metalTexPrefix;
-
-    protected TextureAtlasPosition GetOrCreateTexPos(AssetLocation texturePath)
-    {
-      var texAsset = capi.Assets.TryGet(texturePath.Clone().WithPathPrefixOnce("textures/").WithPathAppendixOnce(".png"));
-      var texPos = targetAtlas[texturePath];
-
-      if (texPos != null) return texPos;
-
-      if (texAsset != null)
-      {
-        targetAtlas.GetOrInsertTexture(texturePath, out var _, out texPos, () => texAsset.ToBitmap(capi));
-      }
-      else
-      {
-        capi.World.Logger.Warning("For render in fruitpress {0}, require texture {1}, but no such texture found.", Code, texturePath);
-      }
-
-      return texPos;
-    }
+    private string[] wood;
+    private string[] strainer;
+    private string[] metal;
+    private Dictionary<string, CompositeTexture> textures;
+    private CompositeShape cshape;
+    private CompositeShape invcshape;
 
     public override void OnLoaded(ICoreAPI api)
     {
-      base.OnLoaded(api);
-      capi = api as ICoreClientAPI;
-
-      AddAllTypesToCreativeInventory();
-      woodTexPrefix = GetTextureLocationPrefix("wood");
-      strainerTexPrefix = GetTextureLocationPrefix("strainer");
-      metalTexPrefix = GetTextureLocationPrefix("metal");
+        base.OnLoaded(api);
+        LoadTypes();
     }
 
-    public string GetTextureLocationPrefix(string key) => Attributes["texturePrefixes"][key].AsString();
-
-    public void AddAllTypesToCreativeInventory()
+    public void LoadTypes()
     {
-      var stacks = new List<JsonItemStack>();
-      var variantGroups = Attributes["variantGroups"].AsObject<Dictionary<string, string[]>>();
+        cshape = Attributes["shape"].AsObject<CompositeShape>();
+        invcshape = Attributes["invshape"].AsObject<CompositeShape>();
+        textures = Attributes["textures"].AsObject<Dictionary<string, CompositeTexture>>();
 
-      if (LastCodePart() != "ns") return;
+        wood = api.ResolveVariants(this, "wood");
+        strainer = api.ResolveVariants(this, "strainer");
+        metal = api.ResolveVariants(this, "metal");
 
-      foreach (var wood in variantGroups["wood"])
-      {
-        foreach (var strainer in variantGroups["strainer"])
+        List<JsonItemStack> stacks = new();
+        foreach ((string wood, string strainer, string metal) in wood.SelectMany(wood => strainer.SelectMany(strainer => metal.Select(metal => (wood, strainer, metal)))))
         {
-          foreach (var metal in variantGroups["metal"])
-          {
-            stacks.Add(GenJstack(string.Format("{{ wood: \"{0}\", strainer: \"{1}\", metal: \"{2}\" }}", wood, strainer, metal)));
-          }
-
-          CreativeInventoryStacks = new CreativeTabAndStackList[]
-          {
-          new CreativeTabAndStackList() { Stacks = stacks.ToArray(), Tabs = new string[]{ "general", "cralwv" } }
-          };
+            JsonItemStack jstack = api.CreateJStack(this, $"{{ \"materials\": {{ \"wood\": \"{wood}\", \"strainer\": \"{strainer}\", \"metal\": \"{metal}\" }} }}");
+            stacks.Add(jstack);
         }
-      }
+
+        if (Attributes["addToCreativeInventory"].AsBool())
+        {
+            CreativeInventoryStacks = new CreativeTabAndStackList[1]
+            {
+                new CreativeTabAndStackList
+                {
+                    Stacks = stacks.ToArray(),
+                    Tabs = new string[2] { "general", "decorative" }
+                }
+            };
+        }
     }
 
-    private JsonItemStack GenJstack(string json)
+    public virtual MeshData GetOrCreateMesh(WoodStrainerMetal materials, bool isInventory = false, ITexPositionSource overrideTexturesource = null)
     {
-      var jstack = new JsonItemStack()
-      {
-        Code = Code,
-        Type = EnumItemClass.Block,
-        Attributes = new JsonObject(JToken.Parse(json))
-      };
+        Dictionary<string, MeshData> cMeshes = ObjectCacheUtil.GetOrCreate(base.api, this + "Meshes", () => new Dictionary<string, MeshData>());
+        ICoreClientAPI capi = base.api as ICoreClientAPI;
+        string key = Code + "-" + materials;
+        if (overrideTexturesource != null || !cMeshes.TryGetValue(key, out MeshData mesh))
+        {
+            mesh = new MeshData(4, 3);
+            // CompositeShape rcshape = cshape.Clone();
+            // CompositeShape invrcshape = invcshape.Clone();
+            if (isInventory)
+            {
+                ShapeInventory.Base.Path = ShapeInventory.Base.Path.Replace("{wood}", materials.Wood).Replace("{strainer}", materials.Strainer).Replace("{metal}", materials.Metal);
+                ShapeInventory.Base.WithPathAppendixOnce(".json").WithPathPrefixOnce("shapes/");
+            }
+            else
+            {
+                Shape.Base.Path = Shape.Base.Path.Replace("{wood}", materials.Wood).Replace("{strainer}", materials.Strainer).Replace("{metal}", materials.Metal);
+                Shape.Base.WithPathAppendixOnce(".json").WithPathPrefixOnce("shapes/");
+            }
 
-      jstack.Resolve(api.World, "fruitpress type");
-
-      return jstack;
+            Shape shape = capi.Assets.TryGet(isInventory ? ShapeInventory.Base : Shape.Base)?.ToObject<Shape>();
+            ITexPositionSource texSource = overrideTexturesource;
+            if (texSource == null)
+            {
+                ShapeTextureSource stexSource = new(capi, shape, isInventory ? ShapeInventory.Base.ToString() : Shape.Base.ToString());
+                texSource = stexSource;
+                foreach (KeyValuePair<string, CompositeTexture> val in textures)
+                {
+                    CompositeTexture ctex = val.Value.Clone();
+                    ctex.Base.Path = ctex.Base.Path.Replace("{wood}", materials.Wood).Replace("{strainer}", materials.Strainer).Replace("{metal}", materials.Metal);
+                    ctex.Bake(capi.Assets);
+                    stexSource.textures[val.Key] = ctex;
+                }
+            }
+            if (shape == null)
+            {
+                return mesh;
+            }
+            capi.Tesselator.TesselateShape("Fruitpress block", shape, out mesh, texSource, null, 0, 0, 0);
+            if (overrideTexturesource == null)
+            {
+                cMeshes[key] = mesh;
+            }
+        }
+        return mesh;
     }
 
     public override void OnBeforeRender(ICoreClientAPI capi, ItemStack itemstack, EnumItemRenderTarget target, ref ItemRenderInfo renderinfo)
     {
-      var meshrefid = itemstack.TempAttributes.GetInt("meshRefId", 0);
-      if (meshrefid == 0 || !Meshrefs.TryGetValue(meshrefid, out renderinfo.ModelRef))
-      {
-        var num = Meshrefs.Count + 1;
-        var value = capi.Render.UploadMesh(GenMesh(itemstack, capi.BlockTextureAtlas));
-        renderinfo.ModelRef = Meshrefs[num] = value;
-        itemstack.TempAttributes.SetInt("meshRefId", num);
-      }
-      base.OnBeforeRender(capi, itemstack, target, ref renderinfo);
-    }
-
-    public MeshData GenMesh(ItemStack itemstack, ITextureAtlasAPI targetAtlas)
-    {
-      this.targetAtlas = targetAtlas;
-      tmpTextures.Clear();
-
-      var wood = itemstack.Attributes.GetString("wood");
-      var strainer = itemstack.Attributes.GetString("strainer");
-      var metal = itemstack.Attributes.GetString("metal");
-
-      if (wood == null && strainer == null && metal == null) return new MeshData();
-
-      tmpTextures["wood"] = new AssetLocation(woodTexPrefix + wood + ".png");
-      tmpTextures["strainer"] = new AssetLocation(strainerTexPrefix + strainer + ".png");
-      tmpTextures["metal"] = new AssetLocation(metalTexPrefix + metal + ".png");
-
-      var shape = capi.Assets.Get(new AssetLocation("woodfp:shapes/block/inventory.json")).ToObject<Shape>();
-
-      capi.Tesselator.TesselateShape(typeForLogging: "fruitpress", shape, out var modeldata, this);
-      return modeldata;
-    }
-
-    public override string GetHeldItemName(ItemStack itemStack) => Lang.GetMatching("game:block-fruitpress-*");
-
-    public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
-    {
-      base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
-
-      var woodDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("wood"));
-      var strainerDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("strainer"));
-      var metalDsc = Lang.Get("material-" + inSlot.Itemstack.Attributes.GetString("metal"));
-
-      dsc.Append('\n').Append(Lang.Get("Wood")).Append(": ").AppendLine(woodDsc)
-        .Append("Strainer: ").AppendLine(strainerDsc)
-        .Append(Lang.Get("Metal")).Append(": ").AppendLine(metalDsc);
-    }
-
-    public MeshData GenMesh(ItemStack itemstack, ITextureAtlasAPI targetAtlas, BlockPos atBlockPos) => GenMesh(itemstack, targetAtlas);
-
-    public string GetMeshCacheKey(ItemStack itemstack)
-    {
-      var wood = itemstack.Attributes.GetString("wood");
-      var strainer = itemstack.Attributes.GetString("strainer");
-      var metal = itemstack.Attributes.GetString("metal");
-      return $"{Code.ToShortString()}-{wood}-{strainer}-{metal}";
+        base.OnBeforeRender(capi, itemstack, target, ref renderinfo);
+        Dictionary<string, MultiTextureMeshRef> meshRefs = ObjectCacheUtil.GetOrCreate(capi, "ScrollrackMeshesInventory", () => new Dictionary<string, MultiTextureMeshRef>());
+        string wood = itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("wood");
+        string strainer = itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("strainer");
+        string metal = itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("metal");
+        WoodStrainerMetal materials = new(wood, strainer, metal);
+        string key = Code + "-" + materials;
+        if (!meshRefs.TryGetValue(key, out MultiTextureMeshRef meshref))
+        {
+            MeshData mesh = GetOrCreateMesh(materials, isInventory: true);
+            meshref = meshRefs[key] = capi.Render.UploadMultiTextureMesh(mesh);
+        }
+        renderinfo.ModelRef = meshref;
     }
 
     public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos)
     {
-      var stack = new ItemStack(world.GetBlock(CodeWithVariant("orientation", "ns")));
-
-      if (api.World.BlockAccessor.GetBlockEntity(pos) is WFPBlockEntityFruitPress be)
-      {
-        stack.Attributes.SetString("wood", be.woodType);
-        stack.Attributes.SetString("strainer", be.strainerType);
-        stack.Attributes.SetString("metal", be.metalType);
-      }
-      return stack;
+        ItemStack stack = base.OnPickBlock(world, pos);
+        if (world.BlockAccessor.GetBlockEntity(pos) is WFPBlockEntityFruitPress befp)
+        {
+            stack.Attributes.GetOrAddTreeAttribute("materials").SetString("wood", befp.Materials.Wood);
+            stack.Attributes.GetOrAddTreeAttribute("materials").SetString("strainer", befp.Materials.Strainer);
+            stack.Attributes.GetOrAddTreeAttribute("materials").SetString("metal", befp.Materials.Metal);
+        }
+        return stack;
     }
 
-    public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
+    public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1f)
     {
-      return new ItemStack[] { OnPickBlock(world, pos) };
+        return new ItemStack[1] { OnPickBlock(world, pos) };
     }
 
     public override BlockDropItemStack[] GetDropsForHandbook(ItemStack handbookStack, IPlayer forPlayer)
     {
-      return new BlockDropItemStack[] { new BlockDropItemStack(handbookStack) };
+        BlockDropItemStack[] drops = base.GetDropsForHandbook(handbookStack, forPlayer);
+        drops[0] = drops[0].Clone();
+        drops[0].ResolvedItemstack.SetFrom(handbookStack);
+        return drops;
     }
-  }
+
+    public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
+    {
+        base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
+
+        string wood = inSlot.Itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("wood");
+        string strainer = inSlot.Itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("strainer");
+        string metal = inSlot.Itemstack.Attributes.GetOrAddTreeAttribute("materials").GetString("metal");
+        WoodStrainerMetal materials = new(wood, strainer, metal);
+
+        materials.OutputTranslatedDescription(dsc);
+    }
 }
